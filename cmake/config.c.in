@@ -19,6 +19,9 @@ extern PyObject* PyInit_xxsubtype(void);
 extern PyObject* PyInit_zipimport(void);
 extern PyObject* PyMarshal_Init(void);
 extern PyObject* _PyWarnings_Init(void);
+extern PyObject* PyInit__collections(void);
+extern PyObject* PyInit_itertools(void);
+extern PyObject* PyInit__io(void);
 
 // Init functions for platform-specific extensions
 @config_inits@
@@ -44,6 +47,9 @@ struct _inittab _PyImport_Inittab[] = {
     {"_weakref", PyInit__weakref},
     {"xxsubtype", PyInit_xxsubtype},
     {"zipimport", PyInit_zipimport},
+    {"_collections", PyInit__collections},
+    {"itertools", PyInit_itertools},
+    {"_io", PyInit__io},
 
     // Entries for platform-specific extensions
 @config_entries@

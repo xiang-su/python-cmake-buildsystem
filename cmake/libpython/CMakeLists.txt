@@ -4,9 +4,12 @@ add_definitions(-DNDEBUG)
 set(LIBPYTHON_SOURCES
     ${CMAKE_BINARY_DIR}/CMakeFiles/config.c
     ${SRC_DIR}/Modules/_codecsmodule.c
+    ${SRC_DIR}/Modules/_collectionsmodule.c
+    ${SRC_DIR}/Modules/_functoolsmodule.c
     ${SRC_DIR}/Modules/errnomodule.c
     ${SRC_DIR}/Modules/gcmodule.c
     ${SRC_DIR}/Modules/getbuildinfo.c
+    ${SRC_DIR}/Modules/itertoolsmodule.c
     ${SRC_DIR}/Modules/main.c
     ${SRC_DIR}/Modules/signalmodule.c
     ${SRC_DIR}/Modules/_sre.c
@@ -14,6 +17,13 @@ set(LIBPYTHON_SOURCES
     ${SRC_DIR}/Modules/_weakref.c
     ${SRC_DIR}/Modules/xxsubtype.c
     ${SRC_DIR}/Modules/zipimport.c
+    ${SRC_DIR}/Modules/_io/_iomodule.c
+    ${SRC_DIR}/Modules/_io/bufferedio.c
+    ${SRC_DIR}/Modules/_io/bytesio.c
+    ${SRC_DIR}/Modules/_io/fileio.c
+    ${SRC_DIR}/Modules/_io/iobase.c
+    ${SRC_DIR}/Modules/_io/stringio.c
+    ${SRC_DIR}/Modules/_io/textio.c
     ${SRC_DIR}/Objects/abstract.c
     ${SRC_DIR}/Objects/boolobject.c
     ${SRC_DIR}/Objects/bytearrayobject.c
@@ -180,13 +190,15 @@ elseif(WIN32)
     if(ENABLE_TKINTER)
         set(PYTHONPATH "${PYTHONPATH}${PATHSEP}.\\\\${PYTHONHOME_ESCAPED}\\\\lib-tk")
     endif(ENABLE_TKINTER)
-    
-    set_property(
-        SOURCE ${SRC_DIR}/PC/getpathp.c
-        PROPERTY COMPILE_DEFINITIONS
-            LANDMARK=L"${PYTHONHOME_ESCAPED}\\\\os.py"
-            "PYTHONPATH=L\"${PYTHONPATH}\""
-    )
+
+    if(NOT MINGW)
+        set_property(
+            SOURCE ${SRC_DIR}/PC/getpathp.c
+            PROPERTY COMPILE_DEFINITIONS
+                LANDMARK=L"${PYTHONHOME_ESCAPED}\\\\os.py"
+                "PYTHONPATH=L\"${PYTHONPATH}\""
+        )
+    endif(MINGW)
     set_property(
         SOURCE ${SRC_DIR}/PC/dl_nt.c
         PROPERTY COMPILE_DEFINITIONS Py_ENABLE_SHARED
@@ -268,6 +280,10 @@ if(BUILD_STATIC)
     set_target_properties(libpython-static PROPERTIES
         COMPILE_DEFINITIONS Py_NO_ENABLE_SHARED
         ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${LIBPYTHON_STATIC_ARCHIVEDIR}
+        ARCHIVE_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/${LIBPYTHON_STATIC_ARCHIVEDIR}
+        ARCHIVE_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/${LIBPYTHON_STATIC_ARCHIVEDIR}
+        ARCHIVE_OUTPUT_DIRECTORY_RELWITHDEBINFO ${CMAKE_BINARY_DIR}/${LIBPYTHON_STATIC_ARCHIVEDIR}
+        ARCHIVE_OUTPUT_DIRECTORY_MINSIZEREL ${CMAKE_BINARY_DIR}/${LIBPYTHON_STATIC_ARCHIVEDIR}
     )
     install(TARGETS libpython-static ARCHIVE DESTINATION ${PYTHONHOME}/config/)
 
