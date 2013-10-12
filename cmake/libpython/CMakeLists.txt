@@ -184,8 +184,8 @@ elseif(WIN32)
     set_property(
         SOURCE ${SRC_DIR}/PC/getpathp.c
         PROPERTY COMPILE_DEFINITIONS
-            LANDMARK="${PYTHONHOME_ESCAPED}\\\\os.py"
-            "PYTHONPATH=\"${PYTHONPATH}\""
+            LANDMARK=L"${PYTHONHOME_ESCAPED}\\\\os.py"
+            "PYTHONPATH=L\"${PYTHONPATH}\""
     )
     set_property(
         SOURCE ${SRC_DIR}/PC/dl_nt.c
