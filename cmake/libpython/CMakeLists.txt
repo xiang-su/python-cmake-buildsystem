@@ -16,13 +16,12 @@ set(LIBPYTHON_SOURCES
     ${SRC_DIR}/Modules/zipimport.c
     ${SRC_DIR}/Objects/abstract.c
     ${SRC_DIR}/Objects/boolobject.c
-    ${SRC_DIR}/Objects/bufferobject.c
     ${SRC_DIR}/Objects/bytearrayobject.c
     ${SRC_DIR}/Objects/bytes_methods.c
+    ${SRC_DIR}/Objects/bytesobject.c
     ${SRC_DIR}/Objects/capsule.c
     ${SRC_DIR}/Objects/cellobject.c
     ${SRC_DIR}/Objects/classobject.c
-    ${SRC_DIR}/Objects/cobject.c
     ${SRC_DIR}/Objects/codeobject.c
     ${SRC_DIR}/Objects/complexobject.c
     ${SRC_DIR}/Objects/descrobject.c
@@ -34,7 +33,6 @@ set(LIBPYTHON_SOURCES
     ${SRC_DIR}/Objects/frameobject.c
     ${SRC_DIR}/Objects/funcobject.c
     ${SRC_DIR}/Objects/genobject.c
-    ${SRC_DIR}/Objects/intobject.c
     ${SRC_DIR}/Objects/iterobject.c
     ${SRC_DIR}/Objects/listobject.c
     ${SRC_DIR}/Objects/longobject.c
@@ -46,7 +44,6 @@ set(LIBPYTHON_SOURCES
     ${SRC_DIR}/Objects/rangeobject.c
     ${SRC_DIR}/Objects/setobject.c
     ${SRC_DIR}/Objects/sliceobject.c
-    ${SRC_DIR}/Objects/stringobject.c
     ${SRC_DIR}/Objects/structseq.c
     ${SRC_DIR}/Objects/tupleobject.c
     ${SRC_DIR}/Objects/typeobject.c
@@ -74,7 +71,7 @@ set(LIBPYTHON_SOURCES
     ${SRC_DIR}/Python/compile.c
     ${SRC_DIR}/Python/dtoa.c
     ${SRC_DIR}/Python/errors.c
-    ${SRC_DIR}/Python/formatter_string.c
+    ${SRC_DIR}/Python/fileutils.c
     ${SRC_DIR}/Python/formatter_unicode.c
     ${SRC_DIR}/Python/frozen.c
     ${SRC_DIR}/Python/future.c
@@ -101,7 +98,8 @@ set(LIBPYTHON_SOURCES
     ${SRC_DIR}/Python/pystrtod.c
     ${SRC_DIR}/Python/Python-ast.c
     ${SRC_DIR}/Python/pythonrun.c
-    ${SRC_DIR}/Python/random.c
+    ${SRC_DIR}/Python/pytime.c
+    ${SRC_DIR}/Python/strdup.c
     ${SRC_DIR}/Python/structmember.c
     ${SRC_DIR}/Python/symtable.c
     ${SRC_DIR}/Python/sysmodule.c
@@ -118,7 +116,7 @@ endif(UNIX)
 
 if(WITH_THREAD)
     list(APPEND LIBPYTHON_SOURCES
-        ${SRC_DIR}/Modules/threadmodule.c
+        ${SRC_DIR}/Modules/_threadmodule.c
         ${SRC_DIR}/Python/thread.c
     )
 endif()
@@ -203,8 +201,8 @@ include_directories(${builtin_includedirs})
 set(config_inits "")
 set(config_entries "")
 foreach(ext ${builtin_extensions})
-    set(config_inits "${config_inits}extern void init${ext}(void);\n")
-    set(config_entries "${config_entries}    {\"${ext}\", init${ext}},\n")
+    set(config_inits "${config_inits}extern PyObject* PyInit_${ext}(void);\n")
+    set(config_entries "${config_entries}    {\"${ext}\", PyInit_${ext}},\n")
 endforeach(ext)
 
 configure_file(
@@ -229,6 +227,7 @@ function(add_libpython name type)
 
     set_target_properties(${name} PROPERTIES
         OUTPUT_NAME ${LIBPYTHON}
+        DEBUG_POSTFIX "_d"
         LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${LIBPYTHON_LIBDIR}
         RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${LIBPYTHON_LIBDIR}
         INSTALL_NAME_DIR ${CMAKE_INSTALL_PREFIX}/${LIBPYTHON_LIBDIR}
