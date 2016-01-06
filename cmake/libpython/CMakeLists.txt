@@ -4,9 +4,14 @@ add_definitions(-DNDEBUG)
 set(LIBPYTHON_SOURCES
     ${CMAKE_BINARY_DIR}/CMakeFiles/config.c
     ${SRC_DIR}/Modules/_codecsmodule.c
+    ${SRC_DIR}/Modules/_collectionsmodule.c
+    ${SRC_DIR}/Modules/_tracemalloc.c
     ${SRC_DIR}/Modules/errnomodule.c
+    ${SRC_DIR}/Modules/faulthandler.c
     ${SRC_DIR}/Modules/gcmodule.c
     ${SRC_DIR}/Modules/getbuildinfo.c
+    ${SRC_DIR}/Modules/hashtable.c
+    ${SRC_DIR}/Modules/itertoolsmodule.c
     ${SRC_DIR}/Modules/main.c
     ${SRC_DIR}/Modules/signalmodule.c
     ${SRC_DIR}/Modules/_sre.c
@@ -15,6 +20,7 @@ set(LIBPYTHON_SOURCES
     ${SRC_DIR}/Modules/xxsubtype.c
     ${SRC_DIR}/Modules/zipimport.c
     ${SRC_DIR}/Objects/abstract.c
+    ${SRC_DIR}/Objects/accu.c
     ${SRC_DIR}/Objects/boolobject.c
     ${SRC_DIR}/Objects/bytearrayobject.c
     ${SRC_DIR}/Objects/bytes_methods.c
@@ -39,7 +45,9 @@ set(LIBPYTHON_SOURCES
     ${SRC_DIR}/Objects/memoryobject.c
     ${SRC_DIR}/Objects/methodobject.c
     ${SRC_DIR}/Objects/moduleobject.c
+    ${SRC_DIR}/Objects/namespaceobject.c
     ${SRC_DIR}/Objects/object.c
+    ${SRC_DIR}/Objects/odictobject.c
     ${SRC_DIR}/Objects/obmalloc.c
     ${SRC_DIR}/Objects/rangeobject.c
     ${SRC_DIR}/Objects/setobject.c
@@ -92,13 +100,17 @@ set(LIBPYTHON_SOURCES
     ${SRC_DIR}/Python/pyarena.c
     ${SRC_DIR}/Python/pyctype.c
     ${SRC_DIR}/Python/pyfpe.c
+    ${SRC_DIR}/Python/pyhash.c
+    ${SRC_DIR}/Python/pylifecycle.c
     ${SRC_DIR}/Python/pymath.c
     ${SRC_DIR}/Python/pystate.c
     ${SRC_DIR}/Python/pystrcmp.c
     ${SRC_DIR}/Python/pystrtod.c
+    ${SRC_DIR}/Python/pystrhex.c
     ${SRC_DIR}/Python/Python-ast.c
     ${SRC_DIR}/Python/pythonrun.c
     ${SRC_DIR}/Python/pytime.c
+    ${SRC_DIR}/Python/random.c
     ${SRC_DIR}/Python/strdup.c
     ${SRC_DIR}/Python/structmember.c
     ${SRC_DIR}/Python/symtable.c
@@ -167,7 +179,7 @@ elseif(WIN32)
     list(APPEND LIBPYTHON_SOURCES
         ${SRC_DIR}/PC/dl_nt.c
         ${SRC_DIR}/PC/getpathp.c
-        ${SRC_DIR}/PC/import_nt.c
+        ${SRC_DIR}/PC/invalid_parameter_handler.c
         ${SRC_DIR}/Python/dynload_win.c
     )
     string(REPLACE "/" "\\\\" PYTHONHOME_ESCAPED ${PYTHONHOME})
@@ -215,10 +227,16 @@ configure_file(
 
 function(add_libpython name type)
     add_library(${name} ${type} ${LIBPYTHON_SOURCES})
-    target_link_libraries(${name}
-        ${builtin_link_libraries}
-        ${HAVE_LIBDL}
-    )
+    if(BUILD_SHARED)
+        target_link_libraries(${name}
+            ${builtin_link_libraries}
+            ${HAVE_LIBDL}
+        )
+    else(BUILD_SHARED)
+        target_link_libraries(${name}
+            ${builtin_link_libraries}
+        )
+    endif(BUILD_SHARED)
     if(WITH_THREAD)
         target_link_libraries(${name} ${CMAKE_THREAD_LIBS_INIT})
     endif(WITH_THREAD)

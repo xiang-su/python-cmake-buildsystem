@@ -15,7 +15,7 @@ add_python_extension(_codecs_jp SOURCES cjkcodecs/_codecs_jp.c)
 add_python_extension(_codecs_kr SOURCES cjkcodecs/_codecs_kr.c)
 add_python_extension(_codecs_tw SOURCES cjkcodecs/_codecs_tw.c)
 add_python_extension(_collections SOURCES _collectionsmodule.c)
-add_python_extension(crypt REQUIRES HAVE_LIBCRYPT SOURCES cryptmodule.c LIBRARIES ${HAVE_LIBCRYPT})
+add_python_extension(crypt REQUIRES HAVE_LIBCRYPT SOURCES _cryptmodule.c LIBRARIES ${HAVE_LIBCRYPT})
 add_python_extension(_csv SOURCES _csv.c)
 add_python_extension(_ctypes_test SOURCES _ctypes/_ctypes_test.c)
 add_python_extension(datetime REQUIRES HAVE_LIBM SOURCES timemodule.c LIBRARIES ${M_LIBRARIES})
@@ -40,7 +40,6 @@ add_python_extension(_lsprof SOURCES _lsprof.c rotatingtree.c)
 add_python_extension(math ${MSVC_BUILTIN} SOURCES _math.c mathmodule.c)
 add_python_extension(mmap ${MSVC_BUILTIN} SOURCES mmapmodule.c)
 add_python_extension(_multibytecodec SOURCES cjkcodecs/multibytecodec.c)
-add_python_extension(operator ${MSVC_BUILTIN} SOURCES operator.c)
 add_python_extension(parser ${MSVC_BUILTIN} SOURCES parsermodule.c)
 add_python_extension(_random SOURCES _randommodule.c)
 add_python_extension(_struct SOURCES _struct.c)
@@ -62,12 +61,11 @@ add_python_extension(termios REQUIRES UNIX SOURCES termios.c)
 # MacOSX-only extensions
 add_python_extension(_scproxy
     REQUIRES APPLE HAVE_LIBSYSTEMCONFIGURATION
-    SOURCES ${SRC_DIR}/Mac/Modules/_scproxy.c
+    SOURCES ${SRC_DIR}/Modules/_scproxy.c
     LIBRARIES ${HAVE_LIBSYSTEMCONFIGURATION}
 )
 
 # Linux-only extensions
-add_python_extension(linuxaudiodev REQUIRES LINUX SOURCES linuxaudiodev.c)
 add_python_extension(ossaudiodev REQUIRES LINUX SOURCES ossaudiodev.c)
 
 # Windows-only extensions
@@ -78,7 +76,6 @@ add_python_extension(_msi
 )
 add_python_extension(msvcrt REQUIRES MSVC BUILTIN SOURCES ${SRC_DIR}/PC/msvcrtmodule.c)
 add_python_extension(nt REQUIRES WIN32 BUILTIN SOURCES posixmodule.c)
-add_python_extension(_subprocess REQUIRES WIN32 BUILTIN SOURCES ${SRC_DIR}/PC/_subprocess.c)
 add_python_extension(winreg REQUIRES WIN32 BUILTIN SOURCES ${SRC_DIR}/PC/winreg.c)
 
 # Multiprocessing is different on unix and windows
@@ -259,7 +256,7 @@ add_python_extension(_bsddb
 )
 add_python_extension(bz2
     REQUIRES BZIP2_LIBRARIES
-    SOURCES bz2module.c
+    SOURCES _bz2module.c
     LIBRARIES ${BZIP2_LIBRARIES}
 )
 add_python_extension(_curses_panel
