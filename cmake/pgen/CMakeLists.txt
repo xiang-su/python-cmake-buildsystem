@@ -1,8 +1,6 @@
 cmake_minimum_required(VERSION 2.6)
 
-add_definitions(-DPy_BUILD_CORE)
 add_definitions(-DNDEBUG)
-add_definitions(-DPGEN)
 
 set(PGEN_SOURCES
     ${SRC_DIR}/Objects/obmalloc.c

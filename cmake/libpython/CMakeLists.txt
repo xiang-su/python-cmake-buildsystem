@@ -1,17 +1,20 @@
 add_definitions(-DPy_BUILD_CORE)
 add_definitions(-DNDEBUG)
+if(WINDOWS_STORE OR WINDOWS_PHONE)
+  add_definitions(-D_WIN32_WINNT=0x0602)
+  add_definitions(-DWINVER=0x0602)
+  add_definitions(-DNTDDI_VERSION=0x06020000)
+endif()
 
 set(LIBPYTHON_SOURCES
     ${CMAKE_BINARY_DIR}/CMakeFiles/config.c
     ${SRC_DIR}/Modules/_codecsmodule.c
-    ${SRC_DIR}/Modules/_collectionsmodule.c
     ${SRC_DIR}/Modules/_tracemalloc.c
     ${SRC_DIR}/Modules/errnomodule.c
     ${SRC_DIR}/Modules/faulthandler.c
     ${SRC_DIR}/Modules/gcmodule.c
     ${SRC_DIR}/Modules/getbuildinfo.c
     ${SRC_DIR}/Modules/hashtable.c
-    ${SRC_DIR}/Modules/itertoolsmodule.c
     ${SRC_DIR}/Modules/main.c
     ${SRC_DIR}/Modules/signalmodule.c
     ${SRC_DIR}/Modules/_sre.c
@@ -111,7 +114,7 @@ set(LIBPYTHON_SOURCES
     ${SRC_DIR}/Python/pythonrun.c
     ${SRC_DIR}/Python/pytime.c
     ${SRC_DIR}/Python/random.c
-    ${SRC_DIR}/Python/strdup.c
+    #${SRC_DIR}/Python/strdup.c   # Have some problems under Linux RelWithDebInfo
     ${SRC_DIR}/Python/structmember.c
     ${SRC_DIR}/Python/symtable.c
     ${SRC_DIR}/Python/sysmodule.c
@@ -143,6 +146,11 @@ endif(UNIX OR MINGW)
 
 # Platform-specific source files
 if(UNIX)
+    if(APPLE)
+        add_definitions(-DSOABI="cpython-35-darwin")
+    else(APPLE)
+        add_definitions(-DSOABI="cpython-35-linux")
+    endif(APPLE)
     list(APPEND LIBPYTHON_SOURCES
         ${SRC_DIR}/Python/dynload_shlib.c
         ${SRC_DIR}/Modules/getpath.c
