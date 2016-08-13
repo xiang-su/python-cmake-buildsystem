@@ -26,6 +26,11 @@ set(WIN32_BUILTIN )
 if(WIN32)
     set(WIN32_BUILTIN BUILTIN)
 endif()
+if(ANDROID OR IOS)
+    set(warn "Disable 'ctypes_test' and 'testcapi' extensions on Android or iOS.")
+    set(ENABLE_CTYPES_TEST OFF CACHE BOOL "${warn}" FORCE)
+    set(ENABLE_TESTCAPI OFF CACHE BOOL "${warn}" FORCE)
+endif()
 
 # XXX Following modules are missing:
 # lzma
@@ -57,7 +62,7 @@ set(datetime3_SOURCES _datetimemodule.c)
 if(UNIX)
   list(APPEND datetime${PY_VERSION_MAJOR}_SOURCES timemodule.c)
 endif()
-add_python_extension(${datetime${PY_VERSION_MAJOR}_NAME} ${WIN32_BUILTIN} REQUIRES HAVE_LIBM BUILTIN SOURCES ${datetime${PY_VERSION_MAJOR}_SOURCES} LIBRARIES ${M_LIBRARIES})
+add_python_extension(${datetime${PY_VERSION_MAJOR}_NAME} ${WIN32_BUILTIN} REQUIRES HAVE_LIBM BUILTIN SOURCES ${datetime${PY_VERSION_MAJOR}_SOURCES} DEFINITIONS Py_BUILD_CORE LIBRARIES ${M_LIBRARIES})
 #if(ENABLE_DATETIME AND CMAKE_C_COMPILER_ID MATCHES GNU)
 #    set_property(SOURCE ${SRC_DIR}/Modules/datetimemodule.c PROPERTY COMPILE_FLAGS -Wno-unused-value)
 #endif()
@@ -92,7 +97,7 @@ set(thread3_NAME _thread)
 set(thread2_SOURCES ${SRC_DIR}/Modules/threadmodule.c)
 set(thread3_SOURCES ${SRC_DIR}/Modules/_threadmodule.c)
 add_python_extension(${thread${PY_VERSION_MAJOR}_NAME} BUILTIN REQUIRES WITH_THREAD SOURCES ${thread${PY_VERSION_MAJOR}_SOURCES})
-add_python_extension(time BUILTIN REQUIRES HAVE_LIBM SOURCES timemodule.c LIBRARIES ${M_LIBRARIES} ${TIMEMODULE_LIB})
+add_python_extension(time BUILTIN REQUIRES HAVE_LIBM SOURCES timemodule.c DEFINITIONS Py_BUILD_CORE LIBRARIES ${M_LIBRARIES} ${TIMEMODULE_LIB})
 add_python_extension(unicodedata SOURCES unicodedata.c)
 
 # Python3
@@ -298,7 +303,7 @@ else()
                         ${SRC_DIR}/Modules/_ctypes/darwin
             DEFINITIONS MACOSX
         )
-    else()
+    elseif(NOT (ANDROID OR IOS))
         enable_language(ASM)
         if("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "x86_64")
           set(_libffi_system_extra_src

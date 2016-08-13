@@ -1123,25 +1123,29 @@ check_c_source_compiles("
 int main() {int a = MAP_ANONYMOUS;}"
 HAVE_MMAP_ANON)
 
-# libffi specific: Check for /dev/zero support for anonymous memory maps
-check_c_source_runs("
-#include <stdlib.h>
-#include <sys/types.h>
-#include <sys/mman.h>
-#include <fcntl.h>
-int main(void) {
-  int devzero;
-  void *retval;
-  devzero = open(\"/dev/zero\", O_RDWR);
-  if (-1 == devzero) {
-    exit(1);
-  }
-  retval = mmap(NULL, 4096, PROT_READ|PROT_WRITE, MAP_SHARED, devzero, 0);
-  if (retval == (void *)-1) {
-    exit(1);
-  }
-  exit(0);
-}" HAVE_MMAP_DEV_ZERO)
+if(CMAKE_CROSSCOMPILING)
+  set(HAVE_MMAP_DEV_ZERO 0)
+else()
+  # libffi specific: Check for /dev/zero support for anonymous memory maps
+  check_c_source_runs("
+  #include <stdlib.h>
+  #include <sys/types.h>
+  #include <sys/mman.h>
+  #include <fcntl.h>
+  int main(void) {
+    int devzero;
+    void *retval;
+    devzero = open(\"/dev/zero\", O_RDWR);
+    if (-1 == devzero) {
+      exit(1);
+    }
+    retval = mmap(NULL, 4096, PROT_READ|PROT_WRITE, MAP_SHARED, devzero, 0);
+    if (retval == (void *)-1) {
+      exit(1);
+    }
+    exit(0);
+  }" HAVE_MMAP_DEV_ZERO)
+endif()
 
 if(IS_PY3)
 
@@ -1965,20 +1969,24 @@ python_platform_test(
 cmake_pop_check_state()
 endif()
 
-check_c_source_runs("#include <unistd.h>\n int main() {
-        int val1 = nice(1); 
-        if (val1 != -1 && val1 == nice(2)) exit(0);
-        exit(1);}" HAVE_BROKEN_NICE)
+if(CMAKE_CROSSCOMPILING)
+  set(HAVE_BROKEN_NICE 0)
+  set(HAVE_BROKEN_POLL 0)
+else()
+  check_c_source_runs("#include <unistd.h>\n int main() {
+          int val1 = nice(1); 
+          if (val1 != -1 && val1 == nice(2)) exit(0);
+          exit(1);}" HAVE_BROKEN_NICE)
 
-check_c_source_runs(" #include <poll.h>
-    int main () {
-    struct pollfd poll_struct = { 42, POLLIN|POLLPRI|POLLOUT, 0 }; close (42);
-    int poll_test = poll (&poll_struct, 1, 0);
-    if (poll_test < 0) { exit(0); }
-    else if (poll_test == 0 && poll_struct.revents != POLLNVAL) { exit(0); }
-    else { exit(1); } }" 
-    HAVE_BROKEN_POLL)
-
+  check_c_source_runs(" #include <poll.h>
+      int main () {
+      struct pollfd poll_struct = { 42, POLLIN|POLLPRI|POLLOUT, 0 }; close (42);
+      int poll_test = poll (&poll_struct, 1, 0);
+      if (poll_test < 0) { exit(0); }
+      else if (poll_test == 0 && poll_struct.revents != POLLNVAL) { exit(0); }
+      else { exit(1); } }" 
+      HAVE_BROKEN_POLL)
+endif()
 
 # Check tzset(3) exists and works like we expect it to
 set(check_src ${PROJECT_BINARY_DIR}/CMakeFiles/ac_cv_working_tzset.c)

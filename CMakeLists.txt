@@ -26,6 +26,20 @@ if(POLICY CMP0042)
     cmake_policy(SET CMP0042 OLD)
 endif()
 
+if(ANDROID OR IOS)
+  set(UNIX OFF)
+  set(LINUX OFF)
+  set(BUILD_PYTHON_EXECUTABLE OFF)
+  set(BUILD_PYTHON_DEVELOPMENT OFF)
+  set(BUILD_FREEZE_IMPORTLIB OFF)
+  set(BUILD_PGEN OFF)
+else()
+  option(BUILD_PYTHON_EXECUTABLE "Build 'python' executable" ON)
+  option(BUILD_PYTHON_DEVELOPMENT "Build files required to develop C extensions" ON)
+  option(BUILD_FREEZE_IMPORTLIB "Build '_freeze_importlib' executable" ON)
+  option(BUILD_PGEN "Build 'pgen' executable" ON)
+endif()
+
 if(CMAKE_CROSSCOMPILING)
     cmake_minimum_required(VERSION 3.3) # Version introducing CROSSCOMPILING_EMULATOR
 endif()
@@ -35,7 +49,9 @@ include(cmake/CMakeChecks.cmake)
 include(cmake/Extensions.cmake)
 include(CMakeDependentOption)
 include(CMakeParseArguments)
-include(CTest)
+if(BUILD_PYTHON_EXECUTABLE)
+  include(CTest)
+endif()
 
 # Options
 option(DOWNLOAD_SOURCES "Automatically download the Python sources" ON)
@@ -127,8 +143,12 @@ option(WITH_DOC_STRINGS "Enable if you want documentation strings in extension m
 set(Py_DEBUG OFF) # TODO - Build debugging interpreter
 option(WITH_PYMALLOC "Define if you want to compile in Python-specific mallocs" ON)
 option(WITH_THREAD "Compile in rudimentary thread support" ON)
-if(UNIX)
-    option(WITH_STATIC_DEPENDENCIES "Restrict extensions and external dependencies to static libraries" OFF)
+if(UNIX OR ANDROID OR IOS)
+    if (ANDROID OR IOS)
+        set(WITH_STATIC_DEPENDENCIES 1)
+    else()
+        option(WITH_STATIC_DEPENDENCIES "Restrict extensions and external dependencies to static libraries" OFF)
+    endif()
     if(WITH_STATIC_DEPENDENCIES)
         if(NOT POLICY CMP0065)
             set(_reason " because option supported only with CMake >= 3.4. Current CMAKE_VERSION [${CMAKE_VERSION}]")
@@ -410,6 +430,8 @@ endif()
 # Clear PythonTargets.cmake
 file(WRITE ${CONFIG_BUILD_DIR}/PythonTargets.cmake "")
 
+add_definitions(-DPy_BUILD_CORE)
+
 # Define python executable wrapper command to ensure
 # python executable resolves the expected python library.
 set(PYTHON_WRAPPER_COMMAND )
@@ -428,77 +450,87 @@ add_subdirectory(cmake/extensions CMakeBuild/extensions)
 
 # Add the other subdirectories
 add_subdirectory(cmake/libpython CMakeBuild/libpython)
-add_subdirectory(cmake/python CMakeBuild/python)
-add_subdirectory(cmake/include CMakeBuild/include)
-add_subdirectory(cmake/lib CMakeBuild/lib)
+if(BUILD_PYTHON_EXECUTABLE)
+    add_subdirectory(cmake/python CMakeBuild/python)
+endif()
+if(BUILD_PYTHON_DEVELOPMENT)
+    add_subdirectory(cmake/include CMakeBuild/include)
+    add_subdirectory(cmake/lib CMakeBuild/lib)
+endif()
 if(BUILD_WININST)
     add_subdirectory(cmake/PC/bdist_wininst CMakeBuild/bdist_wininst)
 endif()
 
-# Add target to run "Argument Clinic" over all source files
-if(IS_PY3)
-add_custom_target(clinic
-    COMMAND ${CMAKE_CROSSCOMPILING_EMULATOR} $<TARGET_FILE:python> ${SRC_DIR}/Tools/clinic/clinic.py --make
-    DEPENDS python
-    WORKING_DIRECTORY ${SRC_DIR}
-    COMMENT "Running 'Argument Clinic' over all source files"
-    VERBATIM
-)
+if(BUILD_PYTHON_EXECUTABLE)
+    # Add target to run "Argument Clinic" over all source files
+    if(IS_PY3)
+    add_custom_target(clinic
+        COMMAND ${CMAKE_CROSSCOMPILING_EMULATOR} $<TARGET_FILE:python> ${SRC_DIR}/Tools/clinic/clinic.py --make
+        DEPENDS python
+        WORKING_DIRECTORY ${SRC_DIR}
+        COMMENT "Running 'Argument Clinic' over all source files"
+        VERBATIM
+    )
+    endif()
 endif()
 
-# Add target to generate 'Include/graminit.h' and 'Python/graminit.c'
-add_custom_target(generate_graminit
-    COMMAND ${CMAKE_CROSSCOMPILING_EMULATOR} $<TARGET_FILE:pgen>
-        ${SRC_DIR}/Grammar/Grammar
-        ${PROJECT_BINARY_DIR}/CMakeFiles/graminit.h
-        ${PROJECT_BINARY_DIR}/CMakeFiles/graminit.c
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        ${PROJECT_BINARY_DIR}/CMakeFiles/graminit.h
-        ${SRC_DIR}/Include/graminit.h
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        ${PROJECT_BINARY_DIR}/CMakeFiles/graminit.c
-        ${SRC_DIR}/Python/graminit.c
-    DEPENDS pgen
-    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-    COMMENT "Generating '${SRC_DIR}/Include/graminit.h' and '${SRC_DIR}/Python/graminit.c'."
-    VERBATIM
-)
+if(BUILD_PGEN)
+    # Add target to generate 'Include/graminit.h' and 'Python/graminit.c'
+    add_custom_target(generate_graminit
+        COMMAND ${CMAKE_CROSSCOMPILING_EMULATOR} $<TARGET_FILE:pgen>
+            ${SRC_DIR}/Grammar/Grammar
+            ${PROJECT_BINARY_DIR}/CMakeFiles/graminit.h
+            ${PROJECT_BINARY_DIR}/CMakeFiles/graminit.c
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            ${PROJECT_BINARY_DIR}/CMakeFiles/graminit.h
+            ${SRC_DIR}/Include/graminit.h
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            ${PROJECT_BINARY_DIR}/CMakeFiles/graminit.c
+            ${SRC_DIR}/Python/graminit.c
+        DEPENDS pgen
+        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+        COMMENT "Generating '${SRC_DIR}/Include/graminit.h' and '${SRC_DIR}/Python/graminit.c'."
+        VERBATIM
+    )
+endif()
 
-# Add target to generate 'opcode.h' header file
-add_custom_target(generate_opcode_h
-    COMMAND ${CMAKE_CROSSCOMPILING_EMULATOR} $<TARGET_FILE:python> ${SRC_DIR}/Tools/scripts/generate_opcode_h.py
-        ${SRC_DIR}/Lib/opcode.py
-        ${PROJECT_BINARY_DIR}/CMakeFiles/opcode.h
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        ${PROJECT_BINARY_DIR}/CMakeFiles/opcode.h
-        ${SRC_DIR}/Include/opcode.h
-    DEPENDS python
-    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-    COMMENT "Generating '${SRC_DIR}/Include/opcode.h'."
-    VERBATIM
-)
+if(BUILD_PYTHON_EXECUTABLE)
+    # Add target to generate 'opcode.h' header file
+    add_custom_target(generate_opcode_h
+        COMMAND ${CMAKE_CROSSCOMPILING_EMULATOR} $<TARGET_FILE:python> ${SRC_DIR}/Tools/scripts/generate_opcode_h.py
+            ${SRC_DIR}/Lib/opcode.py
+            ${PROJECT_BINARY_DIR}/CMakeFiles/opcode.h
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            ${PROJECT_BINARY_DIR}/CMakeFiles/opcode.h
+            ${SRC_DIR}/Include/opcode.h
+        DEPENDS python
+        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+        COMMENT "Generating '${SRC_DIR}/Include/opcode.h'."
+        VERBATIM
+    )
 
-# Add target to generate 'Include/Python-ast.h' from 'Python.asdl'
-add_custom_target(generate_python_ast_h
-    COMMAND ${CMAKE_CROSSCOMPILING_EMULATOR} $<TARGET_FILE:python> ${SRC_DIR}/Parser/asdl_c.py
-        -h ${SRC_DIR}/Include
-        ${SRC_DIR}/Parser/Python.asdl
-    DEPENDS python
-    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-    COMMENT "Generating '${SRC_DIR}/Include/Python-ast.h'"
-    VERBATIM
-)
+    # Add target to generate 'Include/Python-ast.h' from 'Python.asdl'
+    add_custom_target(generate_python_ast_h
+        COMMAND ${CMAKE_CROSSCOMPILING_EMULATOR} $<TARGET_FILE:python> ${SRC_DIR}/Parser/asdl_c.py
+            -h ${SRC_DIR}/Include
+            ${SRC_DIR}/Parser/Python.asdl
+        DEPENDS python
+        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+        COMMENT "Generating '${SRC_DIR}/Include/Python-ast.h'"
+        VERBATIM
+    )
 
-# Add target to generate 'Python/Python-ast.c' from 'Python.asdl'
-add_custom_target(generate_python_ast_c
-    COMMAND ${CMAKE_CROSSCOMPILING_EMULATOR} $<TARGET_FILE:python> ${SRC_DIR}/Parser/asdl_c.py
-        -c ${SRC_DIR}/Python
-        ${SRC_DIR}/Parser/Python.asdl
-    DEPENDS python
-    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-    COMMENT "Generating '${SRC_DIR}/Python/Python-ast.c'"
-    VERBATIM
-)
+    # Add target to generate 'Python/Python-ast.c' from 'Python.asdl'
+    add_custom_target(generate_python_ast_c
+        COMMAND ${CMAKE_CROSSCOMPILING_EMULATOR} $<TARGET_FILE:python> ${SRC_DIR}/Parser/asdl_c.py
+            -c ${SRC_DIR}/Python
+            ${SRC_DIR}/Parser/Python.asdl
+        DEPENDS python
+        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+        COMMENT "Generating '${SRC_DIR}/Python/Python-ast.c'"
+        VERBATIM
+    )
+endif()
 
 # If needed, copy 'asdl.py' and 'Python.asdl' into build directory so that 'test_asdl_parser' passes.
 set(_asdl_subdir ${LIBDIR})
